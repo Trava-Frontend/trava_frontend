@@ -1,16 +1,18 @@
-# trava_frontend
+# Trava Frontned Setup and Starting Guide
 
-A new Flutter project.
+## Prerequisities
 
-## Getting Started
+- Flutter SDK installiert (min. stable)
+- Chrome installiert
 
-This project is a starting point for a Flutter application.
+## Abhängigkeit holen
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter pub get
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Projekt starten (lokal dev)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+flutter run -d chrome --web-hostname=localhost --web-port=60010
+```
