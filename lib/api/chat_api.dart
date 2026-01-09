@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:http/http.dart' as http;
+import 'package:trava_frontend/models/stock.dart';
+
 
 import '../config.dart';
 
@@ -121,5 +123,30 @@ Ausgabeformat:
 
   return jsonDecode(response.body);
 }
+
+  Future<List<Stock>> getPortfolioStocks() async {
+    final uri = apiUrl('/api/trade/portfolio');
+    final token = html.window.localStorage['jwt'];
+
+    if (token == null) {
+      throw Exception('Nicht eingeloggt');
+    }
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Portfolio konnte nicht geladen werden');
+    }
+
+    final data = jsonDecode(response.body);
+    final List positions = data['positions'];
+
+    return positions.map((e) => Stock.fromJson(e)).toList();
+  }
 
 }

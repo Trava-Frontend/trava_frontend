@@ -3,121 +3,173 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:trava_frontend/widgets/single_stock_preview.dart';
+import 'package:trava_frontend/api/chat_api.dart';
 
 import '../models/stock.dart';
 
-
-class AllStocksPreview extends StatefulWidget {
-  const AllStocksPreview({super.key});
-
-  @override
-  State<AllStocksPreview> createState() => _AllStocksPreviewState();
-}
-
-class _AllStocksPreviewState extends State<AllStocksPreview> {
-
-  List<Stock> portfolioStocks = [];
-  List<Stock> availableStocks = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadStocks();
-  }
-
-  Future<void> loadStocks() async {
-    final portfolioData = await rootBundle.loadString('assets/portfolio.json');
-    final availableData = await rootBundle.loadString('assets/available.json');
-
-    final portfolioList = jsonDecode(portfolioData) as List;
-    final availableList = jsonDecode(availableData) as List;
-
-    setState(() {
-      portfolioStocks = portfolioList.map((e) => Stock.fromJson(e)).toList();
-      availableStocks = availableList.map((e) => Stock.fromJson(e)).toList();
-      isLoading = false;
-    });
-  }
-
+class AllStocksPreview extends StatelessWidget {
+  final TravaApi api = TravaApi();
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<List<Stock>>(
+      future: api.getPortfolioStocks(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+        if (snapshot.hasError) {
+          return Center(child: Text('Fehler: ${snapshot.error}'));
+        }
 
-    return Column(
-      children: [
-        const Header(text: "Your Portfolio"),
-        Expanded(
-          flex: 35,
-          child: ListView.builder(
-            itemCount: portfolioStocks.length,
-            itemBuilder: (context, index) {
-              final stock = portfolioStocks[index];
-              return SingleStockPreview(
-                stockName: stock.stockName,
-                stockPrice: stock.stockPrice,
-              );
-            },
-          ),
+        final stocks = snapshot.data!;
+        if (stocks.isEmpty) {
+          return const Center(child: Text('Keine Positionen'));
+        }
+
+        return Column(
+          children: [
+            sectionHeader("Dein Portfolio"),
+            Expanded(
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: ListView(
+                  padding: const EdgeInsets.all(8),
+                  children: buildStockSections(context, stocks),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+void showStockDetails(BuildContext context, Stock stock) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(stock.symbol),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            detailRow('Quantity', stock.quantity.toString()),
+            detailRow('Avg. Buy', '\$${stock.avgEntryPrice.toStringAsFixed(2)}'),
+            detailRow('Current', '\$${stock.currentPrice.toStringAsFixed(2)}'),
+            detailRow('Market Value', '\$${stock.marketValue.toStringAsFixed(2)}'),
+            detailRow(
+              'Unrealized P/L',
+              stock.unrealizedPl.toStringAsFixed(2),
+              valueColor:
+              stock.unrealizedPl >= 0 ? Colors.green : Colors.red,
+            ),
+          ],
         ),
-        const Header(text: "Available Stocks"),
-        Expanded(
-          flex: 65,
-          child: ListView.builder(
-            itemCount: availableStocks.length,
-            itemBuilder: (context, index) {
-              final stock = availableStocks[index];
-              return SingleStockPreview(
-                stockName: stock.stockName,
-                stockPrice: stock.stockPrice,
-              );
-            },
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget detailRow(String label, String value, {Color? valueColor}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: valueColor,
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
 }
 
+Widget stockTile(BuildContext context, Stock stock) {
+  final isPositive = stock.unrealizedPl >= 0;
+  final color = isPositive ? Colors.green : Colors.red;
+  final icon = isPositive ? Icons.arrow_upward : Icons.arrow_downward;
 
-class Header extends StatelessWidget {
-  const Header({
-    super.key,
-    required this.text
-  });
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(5),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).colorScheme.primary,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            )
-          ]
+  return Card(
+    elevation: 2,
+    margin: const EdgeInsets.symmetric(vertical: 4),
+    child: ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        stock.symbol,
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      height: 60,
-      width: double.infinity,
-      child: Center(child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      )),
+      subtitle: Text(
+        'Qty: ${stock.quantity} · Buy: \$${stock.avgEntryPrice.toStringAsFixed(2)}',
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '${stock.unrealizedPl.toStringAsFixed(2)}',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            '\$${stock.marketValue.toStringAsFixed(0)}',
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+      onTap: () => showStockDetails(context, stock),
+    ),
+  );
+}
+
+Widget sectionHeader(String title) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+    child: Text(
+      title,
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 14,
+        color: Colors.grey,
+      ),
+    ),
+  );
+}
+
+List<Widget> buildStockSections(BuildContext context, List<Stock> stocks) {
+  final winners = stocks.where((s) => s.unrealizedPl >= 0).toList();
+  final losers = stocks.where((s) => s.unrealizedPl < 0).toList();
+
+  List<Widget> widgets = [];
+
+  if (winners.isNotEmpty) {
+    widgets.add(sectionHeader('Gewinner'));
+    widgets.addAll(winners.map((s) => stockTile(context, s))
     );
   }
+
+  if (losers.isNotEmpty) {
+    widgets.add(const SizedBox(height: 12));
+    widgets.add(sectionHeader('Verlierer'));
+    widgets.addAll(losers.map((s) => stockTile(context, s))
+    );
+  }
+
+  return widgets;
 }

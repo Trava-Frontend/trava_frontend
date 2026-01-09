@@ -1,25 +1,28 @@
 class Stock {
-  final String stockName;
-  final double stockPrice;
-  final double buyValue;
-  final double sellValue;
-  final double holdingValue;
+  final String symbol;
+  final double quantity;
+  final double avgEntryPrice;
+  final double currentPrice;
+  final double marketValue;
+  final double unrealizedPl;
 
   Stock({
-    required this.stockName,
-    required this.stockPrice,
-    required this.buyValue,
-    required this.sellValue,
-    required this.holdingValue,
+    required this.symbol,
+    required this.quantity,
+    required this.avgEntryPrice,
+    required this.currentPrice,
+    required this.marketValue,
+    required this.unrealizedPl,
   });
 
   factory Stock.fromJson(Map<String, dynamic> json) {
     return Stock(
-      stockName: json['stockName'],
-      stockPrice: (json['stockPrice'] as num).toDouble(),
-      buyValue: (json['buyValue'] as num).toDouble(),
-      sellValue: (json['sellValue'] as num).toDouble(),
-      holdingValue: (json['holdingValue'] as num).toDouble(),
+      symbol: json['symbol'],
+      quantity: (json['qty'] as num).toDouble(),
+      avgEntryPrice: (json['avg_entry_price'] as num).toDouble(),
+      currentPrice: (json['current_price'] as num).toDouble(),
+      marketValue: (json['market_value'] as num).toDouble(),
+      unrealizedPl: (json['unrealized_pl'] as num).toDouble(),
     );
   }
 }
