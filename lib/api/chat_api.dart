@@ -50,7 +50,7 @@ class TravaApi {
   }
 
   Future<String> getPortfolioSummaryText() async {
-  final uri = apiUrl('/api/alpaca/summary/text');
+  final uri = apiUrl('/api/alpaca/summary/text_auth');
 
   final response = await http.get(
     uri,
@@ -125,7 +125,7 @@ Ausgabeformat:
 }
 
   Future<List<Stock>> getPortfolioStocks() async {
-    final uri = apiUrl('/api/trade/portfolio');
+    final uri = apiUrl('/api/trade/portfolio_auth');
     final token = html.window.localStorage['jwt'];
 
     if (token == null) {
@@ -148,5 +148,4 @@ Ausgabeformat:
 
     return positions.map((e) => Stock.fromJson(e)).toList();
   }
-
 }
