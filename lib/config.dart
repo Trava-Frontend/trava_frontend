@@ -1,11 +1,19 @@
 // Shared configuration for API base URL
-// Use --dart-define API_BASE_URL=https://your-backend when building for k8s/web
-const apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://localhost:8080',
-);
+// Build with: --dart-define ENV=prod for k8s production
+// Build with: --dart-define ENV=dev (or omit) for local development
+const environment = String.fromEnvironment('ENV', defaultValue: 'dev');
+
+String get apiBaseUrl {
+  switch (environment) {
+    case 'prod':
+      return 'https://trava-n8n.informatik.haw-hamburg.de';
+    default:
+      return 'http://localhost:8080';
+  }
+}
 
 Uri apiUrl(String path) {
-  if (path.startsWith('/')) return Uri.parse('$apiBaseUrl$path');
-  return Uri.parse('$apiBaseUrl/$path');
+  final baseUrl = apiBaseUrl;
+  if (path.startsWith('/')) return Uri.parse('$baseUrl$path');
+  return Uri.parse('$baseUrl/$path');
 }
