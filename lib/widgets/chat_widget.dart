@@ -93,9 +93,7 @@ class ChatWidgetState extends State<ChatWidget> {
         final raw = points[i]['c'];
         final y = raw is num ? raw.toDouble() : double.tryParse('$raw');
         if (y != null && y.isFinite) {
-          final dt = DateTime.parse(points[i]['t']).toLocal();
-          final x = dt.millisecondsSinceEpoch.toDouble();
-          spots.add(FlSpot(x, y));
+          spots.add(FlSpot(i.toDouble(), y));
         }
       }
 
@@ -125,6 +123,8 @@ class ChatWidgetState extends State<ChatWidget> {
     LineChartData(
       minY: minY * 0.995,
       maxY: maxY * 1.005,
+      minX: 0,
+maxX: spots.length.toDouble() - 1,
 
       lineBarsData: [
         LineChartBarData(
@@ -134,6 +134,38 @@ class ChatWidgetState extends State<ChatWidget> {
           dotData: FlDotData(show: false),
         ),
       ],
+
+      lineTouchData: LineTouchData(
+  enabled: true,
+  handleBuiltInTouches: true,
+
+  touchTooltipData: LineTouchTooltipData(
+    tooltipBgColor: Colors.black87,
+    tooltipRoundedRadius: 8,
+    fitInsideHorizontally: true,
+    fitInsideVertically: true,
+
+    getTooltipItems: (touchedSpots) {
+      return touchedSpots.map((spot) {
+        final index = spot.x.toInt();
+
+        if (index < 0 || index >= points.length) return null;
+
+        final dt = DateTime.parse(points[index]['t']).toLocal();
+        final dateLabel = '${dt.day}.${dt.month}.${dt.year}';
+
+        return LineTooltipItem(
+          '${spot.y.toStringAsFixed(2)} \$\n$dateLabel',
+          const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        );
+      }).toList();
+    },
+  ),
+),
 
       gridData: FlGridData(
         show: true,
@@ -157,19 +189,8 @@ class ChatWidgetState extends State<ChatWidget> {
           ),
         ),
         bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            interval: (spots.last.x - spots.first.x) / 4,
-            getTitlesWidget: (value, meta) {
-              final dt =
-                  DateTime.fromMillisecondsSinceEpoch(value.toInt());
-              return Text(
-                '${dt.day}.${dt.month}',
-                style: const TextStyle(fontSize: 10),
-              );
-            },
-          ),
-        ),
+  sideTitles: SideTitles(showTitles: false),
+),
         rightTitles: AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
