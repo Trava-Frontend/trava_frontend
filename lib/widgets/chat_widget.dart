@@ -236,6 +236,7 @@ maxX: spots.length.toDouble() - 1,
         );
       },
 
+
       onMessageSend: (text) async {
         var messageForApi = '$text\n\nsend by Username: $currentUserName';
 
