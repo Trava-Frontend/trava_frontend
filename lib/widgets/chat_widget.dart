@@ -284,7 +284,29 @@ class ChatWidgetState extends State<ChatWidget> {
           final reply = await TravaApi().sendMessage(messageForApi);
 
           try {
-            final action = jsonDecode(reply);
+            // Versuche JSON zu parsen, auch wenn es leicht fehlerhaft ist
+            String cleanedReply = reply;
+
+            // Fix für fehlerhafte JSON-Antworten vom Agent (fehlende Anführungszeichen)
+            if (reply.contains('SHOW_STOCK_CHART') &&
+                !reply.contains('"type"')) {
+              cleanedReply = reply
+                  .replaceAll('{type:', '{"type":')
+                  .replaceAll(',symbol:', ',"symbol":')
+                  .replaceAll(',period:', ',"period":')
+                  .replaceAll(',timeframe:', ',"timeframe":')
+                  .replaceAll(':"', ': "')
+                  .replaceAllMapped(
+                    RegExp(r':([A-Z/-]+)"'),
+                    (m) => ':"${m.group(1)}"',
+                  )
+                  .replaceAllMapped(
+                    RegExp(r':([A-Z/-]+)}'),
+                    (m) => ':"${m.group(1)}"}',
+                  );
+            }
+
+            final action = jsonDecode(cleanedReply);
             if (action is Map<String, dynamic> &&
                 action['type'] == 'SHOW_STOCK_CHART') {
               _chatController.updateMessage(
@@ -297,8 +319,12 @@ class ChatWidgetState extends State<ChatWidget> {
                 ),
               );
 
+              // Symbol normalisieren (BTC-USD -> BTC/USD)
+              String symbol = action['symbol'] ?? '';
+              symbol = symbol.replaceAll('-', '/');
+
               await _showChartPopup(
-                symbol: action['symbol'],
+                symbol: symbol,
                 period: action['period'] ?? '1W',
               );
               return;

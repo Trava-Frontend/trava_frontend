@@ -103,6 +103,38 @@ Ausgabeformat:
     String timeframe = '1Hour',
     String period = '1W',
   }) async {
+    // Erkennung ob Crypto (enthält / oder endet auf USD bei Crypto-Symbolen)
+    final isCrypto =
+        symbol.contains('/') ||
+        [
+          'BTC',
+          'ETH',
+          'SOL',
+          'DOGE',
+          'XRP',
+          'ADA',
+          'LTC',
+          'LINK',
+          'AVAX',
+          'MATIC',
+          'DOT',
+          'SHIB',
+        ].any((c) => symbol.toUpperCase().startsWith(c));
+
+    if (isCrypto) {
+      // Crypto symbol normalisieren
+      final cryptoSymbol = symbol
+          .toUpperCase()
+          .replaceAll('/USD', '')
+          .replaceAll('USD', '')
+          .replaceAll('-', '');
+      return await getCryptoHistory(
+        cryptoSymbol,
+        timeframe: timeframe,
+        limit: 100,
+      );
+    }
+
     final uri = apiUrl(
       '/api/market/stock/$symbol'
       '?period=$period',
