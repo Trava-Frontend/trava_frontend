@@ -175,6 +175,55 @@ Ausgabeformat:
     return positions.map((e) => Stock.fromJson(e)).toList();
   }
 
+  /// Fetches pending/open orders
+  Future<List<Map<String, dynamic>>> getPendingOrders() async {
+    final uri = apiUrl('/api/trade/orders');
+    final token = html.window.localStorage['jwt'];
+
+    if (token == null) {
+      return [];
+    }
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode != 200) {
+        print(
+          'getPendingOrders failed: ${response.statusCode} - ${response.body}',
+        );
+        return [];
+      }
+
+      final data = jsonDecode(response.body);
+      final List orders = data['orders'] ?? [];
+
+      return orders.cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('getPendingOrders error: $e');
+      return [];
+    }
+  }
+
+  /// Cancels a pending order
+  Future<bool> cancelOrder(String orderId) async {
+    final uri = apiUrl('/api/trade/orders/$orderId');
+    final token = html.window.localStorage['jwt'];
+
+    if (token == null) {
+      throw Exception('Nicht eingeloggt');
+    }
+
+    final response = await http.delete(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    return response.statusCode == 200;
+  }
+
   /// Fetches all available assets (stocks, ETFs, crypto)
   Future<List<Map<String, dynamic>>> getAllAssets({
     String? assetType,
