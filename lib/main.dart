@@ -1,6 +1,7 @@
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -13,7 +14,9 @@ import 'utils/theme_provider.dart';
 import 'utils/user_provider.dart';
 
 Future<void> main() async {
-  // KEIN dotenv im Web / Kubernetes
+  WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
+
   runApp(
     MultiProvider(
       providers: [
