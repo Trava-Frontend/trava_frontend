@@ -9,7 +9,7 @@ class TravaApi {
   // API Base ist build-time konfigurierbar via --dart-define=API_BASE_URL=...
   static final Uri _replyMasterUrl = apiUrl('/api/reply/master');
 
-  Future<String> sendMessage(String message) async {
+  Future<String> sendMessage(String message, {bool forceMode = false}) async {
     final token = html.window.localStorage['jwt'];
 
     if (token == null) {
@@ -24,7 +24,7 @@ class TravaApi {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({"query": message}),
+        body: jsonEncode({"query": message, "force_mode": forceMode}),
       );
 
       if (response.statusCode == 200) {

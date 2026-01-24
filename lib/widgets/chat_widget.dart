@@ -261,6 +261,8 @@ class ChatWidgetState extends State<ChatWidget> {
       },
 
       onMessageSend: (text) async {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final isForceMode = userProvider.forceMode;
         var messageForApi = '$text\n\nsend by Username: $currentUserName';
 
         _chatController.insertMessage(
@@ -281,7 +283,10 @@ class ChatWidgetState extends State<ChatWidget> {
         _chatController.insertMessage(placeholder);
 
         try {
-          final reply = await TravaApi().sendMessage(messageForApi);
+          final reply = await TravaApi().sendMessage(
+            messageForApi,
+            forceMode: isForceMode,
+          );
 
           try {
             // Versuche JSON zu parsen, auch wenn es leicht fehlerhaft ist
