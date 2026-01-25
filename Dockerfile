@@ -2,6 +2,7 @@
 # Build stage
 # Use a Flutter image with Dart >= 3.9 to satisfy sdk: ^3.9.2
 FROM ghcr.io/cirruslabs/flutter:latest AS build
+# Always pass --build-arg ENV=prod for production deployments
 ARG ENV=dev
 WORKDIR /app
 
